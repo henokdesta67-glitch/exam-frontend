@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 
-// Declare Telegram WebApp type for TypeScript
 declare global {
   interface Window {
     Telegram?: {
@@ -19,7 +18,6 @@ declare global {
   }
 }
 
-// Mock Question Dataset
 const mockQuestions = Array.from({ length: 80 }, (_, i) => ({
   id: i + 1,
   section: i < 35 ? 'Verbal' : 'Quantitative',
@@ -33,12 +31,11 @@ export default function App() {
   const [currentIdx, setCurrentIdx] = useState(0);
   const [answers, setAnswers] = useState<Record<number, number>>({});
   const [flagged, setFlagged] = useState<Record<number, boolean>>({});
-  const [timeLeft, setTimeLeft] = useState(9000); // 2h 30m
+  const [timeLeft, setTimeLeft] = useState(9000);
   const [showSubmitModal, setShowSubmitModal] = useState(false);
   const [userName, setUserName] = useState('Candidate');
 
   useEffect(() => {
-    // Fetch Telegram Username (@username) or first_name fallback
     if (window.Telegram?.WebApp) {
       window.Telegram.WebApp.ready?.();
       const tgUser = window.Telegram.WebApp.initDataUnsafe?.user;
@@ -106,7 +103,6 @@ export default function App() {
     }
   };
 
-  // 1. INTRO SCREEN
   if (screen === 'intro') {
     return (
       <div style={containerStyle}>
@@ -173,7 +169,6 @@ export default function App() {
     );
   }
 
-  // 2. RESULTS & SCORE OVERVIEW SCREEN
   if (screen === 'results') {
     const { totalCorrect, scorePct, verbalCorrect, quantCorrect } = calculateResults();
     return (
@@ -184,7 +179,6 @@ export default function App() {
           <span style={{ color: '#64748b', fontSize: '14px' }}>Candidate: {userName}</span>
         </div>
 
-        {/* Circular Progress & Score Gauge */}
         <div style={cardStyle}>
           <div style={{ textAlign: 'center', padding: '10px' }}>
             <div style={circleGaugeStyle}>
@@ -196,7 +190,6 @@ export default function App() {
             </div>
           </div>
 
-          {/* Correct / Wrong / Score Summary */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', marginTop: '16px' }}>
             <div style={{ ...statCardStyle, backgroundColor: '#f0fdf4' }}>
               <span style={{ color: '#16a34a', fontSize: '18px', fontWeight: 'bold' }}>{totalCorrect}</span>
@@ -213,7 +206,6 @@ export default function App() {
           </div>
         </div>
 
-        {/* Section Performance Bars */}
         <div style={cardStyle}>
           <h3 style={sectionTitleStyle}>Section Performance</h3>
           
@@ -238,7 +230,6 @@ export default function App() {
           </div>
         </div>
 
-        {/* Action Buttons: Review Questions or Share Score */}
         <button style={primaryButtonStyle} onClick={() => { setCurrentIdx(0); setScreen('review'); }}>
           🔍 Review Questions & Answers
         </button>
@@ -249,7 +240,6 @@ export default function App() {
     );
   }
 
-  // 3. REVIEW QUESTIONS & DETAILED ANSWERS SCREEN
   if (screen === 'review') {
     const q = mockQuestions[currentIdx];
     const userAns = answers[currentIdx];
@@ -326,7 +316,6 @@ export default function App() {
           </div>
         </div>
 
-        {/* Question Review Grid */}
         <h3 style={{ ...sectionTitleStyle, margin: '16px 0 8px 4px' }}>Question Navigator</h3>
         <div style={gridScrollContainerStyle}>
           {mockQuestions.map((_, idx) => {
@@ -369,12 +358,10 @@ export default function App() {
     );
   }
 
-  // 4. ACTIVE EXAM SCREEN
   const currentQ = mockQuestions[currentIdx];
 
   return (
     <div style={containerStyle}>
-      {/* Timer Bar */}
       <div style={{ ...cardStyle, padding: '10px 16px', marginBottom: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#64748b' }}>Time Remaining</span>
         <span style={{ fontSize: '14px', fontWeight: 'bold', color: timeLeft < 300 ? '#dc2626' : '#0284c7' }}>
@@ -382,7 +369,6 @@ export default function App() {
         </span>
       </div>
 
-      {/* Question Card */}
       <div style={{ ...cardStyle, marginBottom: '12px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span style={{ fontWeight: 'bold', color: '#0f172a' }}>
@@ -422,7 +408,6 @@ export default function App() {
         </div>
       </div>
 
-      {/* Grid Navigation */}
       <h3 style={{ ...sectionTitleStyle, margin: '16px 0 8px 4px' }}>Question Navigation</h3>
       <div style={gridScrollContainerStyle}>
         {mockQuestions.map((_, idx) => {
@@ -464,7 +449,6 @@ export default function App() {
         })}
       </div>
 
-      {/* Submit Controls */}
       <div style={{ marginTop: '12px' }}>
         <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '8px', textAlign: 'center' }}>
           {answeredCount}/80 answered · {flaggedCount} flagged
@@ -474,7 +458,6 @@ export default function App() {
         </button>
       </div>
 
-      {/* SUBMIT CONFIRMATION MODAL */}
       {showSubmitModal && (
         <div style={modalOverlayStyle}>
           <div style={modalCardStyle}>
@@ -495,7 +478,7 @@ export default function App() {
                 Keep Going
               </button>
               <button
-                style={{ ...primaryButtonStyle, marginTop: 0 }}
+                style={primaryButtonStyle}
                 onClick={() => {
                   setShowSubmitModal(false);
                   setScreen('results');
@@ -511,7 +494,6 @@ export default function App() {
   );
 }
 
-// INLINE STYLES
 const containerStyle: React.CSSProperties = {
   maxWidth: '480px',
   margin: '0 auto',
