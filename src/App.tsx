@@ -12,6 +12,7 @@ declare global {
             username?: string;
           };
         };
+        openTelegramLink?: (url: string) => void;
         ready?: () => void;
       };
     };
@@ -28,20 +29,22 @@ const mockQuestions = Array.from({ length: 80 }, (_, i) => ({
 }));
 
 export default function App() {
-  const [screen, setScreen] = useState<'intro' | 'exam' | 'results'>('intro');
+  const [screen, setScreen] = useState<'intro' | 'exam' | 'results' | 'review'>('intro');
   const [currentIdx, setCurrentIdx] = useState(0);
   const [answers, setAnswers] = useState<Record<number, number>>({});
   const [flagged, setFlagged] = useState<Record<number, boolean>>({});
   const [timeLeft, setTimeLeft] = useState(9000); // 2h 30m
   const [showSubmitModal, setShowSubmitModal] = useState(false);
-  const [userName, setUserName] = useState('Student');
+  const [userName, setUserName] = useState('Candidate');
 
   useEffect(() => {
-    // Read user details from Telegram Web App API
+    // Fetch Telegram Username (@username) or first_name fallback
     if (window.Telegram?.WebApp) {
       window.Telegram.WebApp.ready?.();
       const tgUser = window.Telegram.WebApp.initDataUnsafe?.user;
-      if (tgUser?.first_name) {
+      if (tgUser?.username) {
+        setUserName(`@${tgUser.username}`);
+      } else if (tgUser?.first_name) {
         setUserName(tgUser.first_name);
       }
     }
@@ -88,7 +91,22 @@ export default function App() {
     return { totalCorrect, scorePct, verbalCorrect, quantCorrect };
   };
 
-  // 1. INTRO / OVERVIEW SCREEN
+  const handleShareScore = () => {
+    const { totalCorrect, scorePct } = calculateResults();
+    const shareText = encodeURIComponent(
+      `🎯 I just completed the UAT Model Exam!\n\n👤 Candidate: ${userName}\n📊 Score: ${totalCorrect}/80 (${scorePct}%)\n⏱️ Time Spent: ${formatTime(9000 - timeLeft)}\n\nTry the bot and test your skills!`
+    );
+    
+    const shareUrl = `https://t.me/share/url?url=${encodeURIComponent('https://t.me/')}&text=${shareText}`;
+    
+    if (window.Telegram?.WebApp?.openTelegramLink) {
+      window.Telegram.WebApp.openTelegramLink(shareUrl);
+    } else {
+      window.open(shareUrl, '_blank');
+    }
+  };
+
+  // 1. INTRO SCREEN
   if (screen === 'intro') {
     return (
       <div style={containerStyle}>
@@ -143,17 +161,9 @@ export default function App() {
           <h3 style={sectionTitleStyle}>📋 Instructions</h3>
           <ol style={{ paddingLeft: '20px', margin: 0, color: '#334155', fontSize: '14px', lineHeight: '1.6' }}>
             <li>Each question carries 1 mark. No negative marking.</li>
-            <li>You can flag questions to review later.</li>
-            <li>The exam auto-submits when time expires.</li>
-            <li>Invite friends via your referral link to unlock detailed results.</li>
+            <li>You can flag questions to review later during the exam.</li>
+            <li>Submit when finished to view your final score breakdown.</li>
           </ol>
-        </div>
-
-        <div style={unlockAlertStyle}>
-          🔒 <b>Results are locked after exam</b>
-          <div style={{ fontSize: '12px', color: '#854d0e', marginTop: '4px' }}>
-            Invite friends via your referral link to unlock your detailed results and score breakdown.
-          </div>
         </div>
 
         <button style={primaryButtonStyle} onClick={() => setScreen('exam')}>
@@ -163,7 +173,7 @@ export default function App() {
     );
   }
 
-  // 2. RESULTS SCREEN
+  // 2. RESULTS & SCORE OVERVIEW SCREEN
   if (screen === 'results') {
     const { totalCorrect, scorePct, verbalCorrect, quantCorrect } = calculateResults();
     return (
@@ -172,10 +182,9 @@ export default function App() {
           <div style={{ fontSize: '48px' }}>💪</div>
           <h2 style={{ margin: '8px 0 4px', color: '#0f172a' }}>🎓 Exam Completed!</h2>
           <span style={{ color: '#64748b', fontSize: '14px' }}>Candidate: {userName}</span>
-          <h3 style={{ color: '#dc2626', marginTop: '8px' }}>Keep practicing!</h3>
         </div>
 
-        {/* Circular Progress Gauge */}
+        {/* Circular Progress & Score Gauge */}
         <div style={cardStyle}>
           <div style={{ textAlign: 'center', padding: '10px' }}>
             <div style={circleGaugeStyle}>
@@ -187,6 +196,7 @@ export default function App() {
             </div>
           </div>
 
+          {/* Correct / Wrong / Score Summary */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', marginTop: '16px' }}>
             <div style={{ ...statCardStyle, backgroundColor: '#f0fdf4' }}>
               <span style={{ color: '#16a34a', fontSize: '18px', fontWeight: 'bold' }}>{totalCorrect}</span>
@@ -203,7 +213,7 @@ export default function App() {
           </div>
         </div>
 
-        {/* Section Performance */}
+        {/* Section Performance Bars */}
         <div style={cardStyle}>
           <h3 style={sectionTitleStyle}>Section Performance</h3>
           
@@ -228,21 +238,138 @@ export default function App() {
           </div>
         </div>
 
-        <p style={{ textAlign: 'center', color: '#64748b', fontSize: '13px', lineHeight: '1.5' }}>
-          Review the questions you missed and focus on topics where you struggled. Consistent practice improves results!
-        </p>
-
-        <button style={primaryButtonStyle} onClick={() => setScreen('intro')}>
-          🤖 Back to Bot
+        {/* Action Buttons: Review Questions or Share Score */}
+        <button style={primaryButtonStyle} onClick={() => { setCurrentIdx(0); setScreen('review'); }}>
+          🔍 Review Questions & Answers
         </button>
-        <button style={secondaryButtonStyle}>
+        <button style={secondaryButtonStyle} onClick={handleShareScore}>
           📤 Share Your Score
         </button>
       </div>
     );
   }
 
-  // 3. EXAM QUESTION & GRID NAVIGATION SCREEN
+  // 3. REVIEW QUESTIONS & DETAILED ANSWERS SCREEN
+  if (screen === 'review') {
+    const q = mockQuestions[currentIdx];
+    const userAns = answers[currentIdx];
+    const isCorrect = userAns === q.correct;
+
+    return (
+      <div style={containerStyle}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+          <button style={{ ...secondaryButtonStyle, width: 'auto', margin: 0, padding: '6px 12px' }} onClick={() => setScreen('results')}>
+            ⬅️ Back to Score
+          </button>
+          <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#64748b' }}>
+            Question {currentIdx + 1} of 80
+          </span>
+        </div>
+
+        <div style={cardStyle}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+            <span style={{ fontWeight: 'bold', color: '#0f172a' }}>{q.section} Section</span>
+            <span style={{
+              padding: '4px 8px',
+              borderRadius: '6px',
+              fontSize: '12px',
+              fontWeight: 'bold',
+              backgroundColor: userAns === undefined ? '#f1f5f9' : isCorrect ? '#dcfce7' : '#fee2e2',
+              color: userAns === undefined ? '#475569' : isCorrect ? '#15803d' : '#b91c1c'
+            }}>
+              {userAns === undefined ? 'Unanswered' : isCorrect ? 'Correct ✓' : 'Incorrect ✗'}
+            </span>
+          </div>
+
+          <p style={{ color: '#334155', fontSize: '15px', marginTop: '8px' }}>{q.question}</p>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px' }}>
+            {q.options.map((opt, optIdx) => {
+              const isSelected = userAns === optIdx;
+              const isRightOpt = q.correct === optIdx;
+
+              let border = '1px solid #e2e8f0';
+              let bg = '#fff';
+              let color = '#334155';
+
+              if (isRightOpt) {
+                border = '2px solid #22c55e';
+                bg = '#f0fdf4';
+                color = '#15803d';
+              } else if (isSelected && !isCorrect) {
+                border = '2px solid #ef4444';
+                bg = '#fef2f2';
+                color = '#b91c1c';
+              }
+
+              return (
+                <div
+                  key={optIdx}
+                  style={{
+                    padding: '10px 14px',
+                    borderRadius: '8px',
+                    border,
+                    backgroundColor: bg,
+                    color,
+                    fontSize: '14px',
+                    display: 'flex',
+                    justify: 'space-between',
+                    alignItems: 'center'
+                  }}
+                >
+                  <span>{opt}</span>
+                  {isRightOpt && <span style={{ fontWeight: 'bold' }}>Correct Answer ✓</span>}
+                  {isSelected && !isRightOpt && <span style={{ fontWeight: 'bold' }}>Your Choice ✗</span>}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Question Review Grid */}
+        <h3 style={{ ...sectionTitleStyle, margin: '16px 0 8px 4px' }}>Question Navigator</h3>
+        <div style={gridScrollContainerStyle}>
+          {mockQuestions.map((_, idx) => {
+            const uAns = answers[idx];
+            const correct = uAns === mockQuestions[idx].correct;
+            const isCurr = currentIdx === idx;
+
+            let bgColor = '#fff';
+            let textColor = '#334155';
+
+            if (isCurr) {
+              bgColor = '#0284c7';
+              textColor = '#fff';
+            } else if (uAns !== undefined) {
+              bgColor = correct ? '#dcfce7' : '#fee2e2';
+              textColor = correct ? '#15803d' : '#b91c1c';
+            }
+
+            return (
+              <button
+                key={idx}
+                onClick={() => setCurrentIdx(idx)}
+                style={{
+                  height: '40px',
+                  borderRadius: '6px',
+                  border: '1px solid #cbd5e1',
+                  backgroundColor: bgColor,
+                  color: textColor,
+                  fontWeight: isCurr ? 'bold' : 'normal',
+                  fontSize: '13px',
+                  cursor: 'pointer'
+                }}
+              >
+                {idx + 1}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  // 4. ACTIVE EXAM SCREEN
   const currentQ = mockQuestions[currentIdx];
 
   return (
@@ -255,7 +382,7 @@ export default function App() {
         </span>
       </div>
 
-      {/* Top Question Header */}
+      {/* Question Card */}
       <div style={{ ...cardStyle, marginBottom: '12px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span style={{ fontWeight: 'bold', color: '#0f172a' }}>
@@ -295,10 +422,8 @@ export default function App() {
         </div>
       </div>
 
-      {/* Grid Header */}
+      {/* Grid Navigation */}
       <h3 style={{ ...sectionTitleStyle, margin: '16px 0 8px 4px' }}>Question Navigation</h3>
-
-      {/* Scrollable Question Grid Container */}
       <div style={gridScrollContainerStyle}>
         {mockQuestions.map((_, idx) => {
           const isAnswered = answers[idx] !== undefined;
@@ -339,7 +464,7 @@ export default function App() {
         })}
       </div>
 
-      {/* Footer Controls */}
+      {/* Submit Controls */}
       <div style={{ marginTop: '12px' }}>
         <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '8px', textAlign: 'center' }}>
           {answeredCount}/80 answered · {flaggedCount} flagged
@@ -464,16 +589,6 @@ const sectionTagStyle: React.CSSProperties = {
   borderRadius: '12px',
   fontSize: '12px',
   fontWeight: '500'
-};
-
-const unlockAlertStyle: React.CSSProperties = {
-  backgroundColor: '#fefce8',
-  border: '1px solid #fef08a',
-  borderRadius: '12px',
-  padding: '12px',
-  fontSize: '13px',
-  color: '#713f12',
-  marginBottom: '16px'
 };
 
 const primaryButtonStyle: React.CSSProperties = {
