@@ -31,6 +31,13 @@ export default function App() {
     setFlagged({ ...flagged, [idx]: !flagged[idx] });
   };
 
+  const formatTime = (seconds: number) => {
+    const hrs = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    return `${hrs}h ${mins}m ${secs < 10 ? '0' : ''}${secs}s`;
+  };
+
   const answeredCount = Object.keys(answers).length;
   const flaggedCount = Object.values(flagged).filter(Boolean).length;
 
@@ -210,6 +217,14 @@ export default function App() {
 
   return (
     <div style={containerStyle}>
+      {/* Timer Bar */}
+      <div style={{ ...cardStyle, padding: '10px 16px', marginBottom: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#64748b' }}>Time Remaining</span>
+        <span style={{ fontSize: '14px', fontWeight: 'bold', color: timeLeft < 300 ? '#dc2626' : '#0284c7' }}>
+          ⏱️ {formatTime(timeLeft)}
+        </span>
+      </div>
+
       {/* Top Question Header */}
       <div style={{ ...cardStyle, marginBottom: '12px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -341,7 +356,7 @@ export default function App() {
   );
 }
 
-// INLINE STYLES (Matching modern Telegram UI design)
+// INLINE STYLES
 const containerStyle: React.CSSProperties = {
   maxWidth: '480px',
   margin: '0 auto',
@@ -362,7 +377,7 @@ const cardStyle: React.CSSProperties = {
 
 const headerBadgeStyle: React.CSSProperties = {
   display: 'flex',
-  justify: 'space-between',
+  justifyContent: 'space-between',
   alignItems: 'center',
   marginBottom: '12px'
 };
