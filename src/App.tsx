@@ -1,5 +1,23 @@
 import { useState, useEffect } from 'react';
 
+// Declare Telegram WebApp type for TypeScript
+declare global {
+  interface Window {
+    Telegram?: {
+      WebApp?: {
+        initDataUnsafe?: {
+          user?: {
+            first_name?: string;
+            last_name?: string;
+            username?: string;
+          };
+        };
+        ready?: () => void;
+      };
+    };
+  }
+}
+
 // Mock Question Dataset
 const mockQuestions = Array.from({ length: 80 }, (_, i) => ({
   id: i + 1,
@@ -16,6 +34,18 @@ export default function App() {
   const [flagged, setFlagged] = useState<Record<number, boolean>>({});
   const [timeLeft, setTimeLeft] = useState(9000); // 2h 30m
   const [showSubmitModal, setShowSubmitModal] = useState(false);
+  const [userName, setUserName] = useState('Student');
+
+  useEffect(() => {
+    // Read user details from Telegram Web App API
+    if (window.Telegram?.WebApp) {
+      window.Telegram.WebApp.ready?.();
+      const tgUser = window.Telegram.WebApp.initDataUnsafe?.user;
+      if (tgUser?.first_name) {
+        setUserName(tgUser.first_name);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     if (screen !== 'exam') return;
@@ -69,7 +99,7 @@ export default function App() {
 
         <div style={cardStyle}>
           <div style={{ fontSize: '40px' }}>👋</div>
-          <h2 style={{ margin: '8px 0 4px', color: '#0f172a' }}>Hello, Henok!</h2>
+          <h2 style={{ margin: '8px 0 4px', color: '#0f172a' }}>Hello, {userName}!</h2>
           <p style={{ color: '#64748b', margin: 0, fontSize: '14px' }}>
             Welcome to the Final UAT Model exam simulation.
           </p>
@@ -115,14 +145,14 @@ export default function App() {
             <li>Each question carries 1 mark. No negative marking.</li>
             <li>You can flag questions to review later.</li>
             <li>The exam auto-submits when time expires.</li>
-            <li>Invite 0 friends via your referral link to unlock your detailed results.</li>
+            <li>Invite friends via your referral link to unlock detailed results.</li>
           </ol>
         </div>
 
         <div style={unlockAlertStyle}>
           🔒 <b>Results are locked after exam</b>
           <div style={{ fontSize: '12px', color: '#854d0e', marginTop: '4px' }}>
-            Invite 0 friends via your referral link to unlock your detailed results and score breakdown.
+            Invite friends via your referral link to unlock your detailed results and score breakdown.
           </div>
         </div>
 
@@ -141,7 +171,7 @@ export default function App() {
         <div style={{ textAlign: 'center', margin: '20px 0' }}>
           <div style={{ fontSize: '48px' }}>💪</div>
           <h2 style={{ margin: '8px 0 4px', color: '#0f172a' }}>🎓 Exam Completed!</h2>
-          <span style={{ color: '#64748b', fontSize: '14px' }}>Candidate: Henok_0</span>
+          <span style={{ color: '#64748b', fontSize: '14px' }}>Candidate: {userName}</span>
           <h3 style={{ color: '#dc2626', marginTop: '8px' }}>Keep practicing!</h3>
         </div>
 
