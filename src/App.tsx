@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 
 declare global {
   interface Window {
@@ -245,6 +245,15 @@ export default function App() {
     const userAns = answers[currentIdx];
     const isCorrect = userAns === q.correct;
 
+    const statusBadgeStyle: React.CSSProperties = {
+      padding: '4px 8px',
+      borderRadius: '6px',
+      fontSize: '12px',
+      fontWeight: 'bold',
+      backgroundColor: userAns === undefined ? '#f1f5f9' : isCorrect ? '#dcfce7' : '#fee2e2',
+      color: userAns === undefined ? '#475569' : isCorrect ? '#15803d' : '#b91c1c'
+    };
+
     return (
       <div style={containerStyle}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
@@ -259,14 +268,7 @@ export default function App() {
         <div style={cardStyle}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
             <span style={{ fontWeight: 'bold', color: '#0f172a' }}>{q.section} Section</span>
-            <span style={{
-              padding: '4px 8px',
-              borderRadius: '6px',
-              fontSize: '12px',
-              fontWeight: 'bold',
-              backgroundColor: userAns === undefined ? '#f1f5f9' : isCorrect ? '#dcfce7' : '#fee2e2',
-              color: userAns === undefined ? '#475569' : isCorrect ? '#15803d' : '#b91c1c'
-            }}>
+            <span style={statusBadgeStyle}>
               {userAns === undefined ? 'Unanswered' : isCorrect ? 'Correct ✓' : 'Incorrect ✗'}
             </span>
           </div>
@@ -292,21 +294,20 @@ export default function App() {
                 color = '#b91c1c';
               }
 
+              const optionRowStyle: React.CSSProperties = {
+                padding: '10px 14px',
+                borderRadius: '8px',
+                border,
+                backgroundColor: bg,
+                color,
+                fontSize: '14px',
+                display: 'flex',
+                justify: 'space-between',
+                alignItems: 'center'
+              };
+
               return (
-                <div
-                  key={optIdx}
-                  style={{
-                    padding: '10px 14px',
-                    borderRadius: '8px',
-                    border,
-                    backgroundColor: bg,
-                    color,
-                    fontSize: '14px',
-                    display: 'flex',
-                    justify: 'space-between',
-                    alignItems: 'center'
-                  }}
-                >
+                <div key={optIdx} style={optionRowStyle}>
                   <span>{opt}</span>
                   {isRightOpt && <span style={{ fontWeight: 'bold' }}>Correct Answer ✓</span>}
                   {isSelected && !isRightOpt && <span style={{ fontWeight: 'bold' }}>Your Choice ✗</span>}
@@ -334,21 +335,19 @@ export default function App() {
               textColor = correct ? '#15803d' : '#b91c1c';
             }
 
+            const navBtnStyle: React.CSSProperties = {
+              height: '40px',
+              borderRadius: '6px',
+              border: '1px solid #cbd5e1',
+              backgroundColor: bgColor,
+              color: textColor,
+              fontWeight: isCurr ? 'bold' : 'normal',
+              fontSize: '13px',
+              cursor: 'pointer'
+            };
+
             return (
-              <button
-                key={idx}
-                onClick={() => setCurrentIdx(idx)}
-                style={{
-                  height: '40px',
-                  borderRadius: '6px',
-                  border: '1px solid #cbd5e1',
-                  backgroundColor: bgColor,
-                  color: textColor,
-                  fontWeight: isCurr ? 'bold' : 'normal',
-                  fontSize: '13px',
-                  cursor: 'pointer'
-                }}
-              >
+              <button key={idx} onClick={() => setCurrentIdx(idx)} style={navBtnStyle}>
                 {idx + 1}
               </button>
             );
@@ -386,21 +385,19 @@ export default function App() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px' }}>
           {currentQ.options.map((opt, optIdx) => {
             const isSelected = answers[currentIdx] === optIdx;
+            const optionButtonStyle: React.CSSProperties = {
+              padding: '10px 14px',
+              borderRadius: '8px',
+              border: isSelected ? '2px solid #0284c7' : '1px solid #e2e8f0',
+              backgroundColor: isSelected ? '#f0f9ff' : '#fff',
+              textAlign: 'left',
+              fontSize: '14px',
+              color: isSelected ? '#0369a1' : '#334155',
+              cursor: 'pointer'
+            };
+
             return (
-              <button
-                key={optIdx}
-                onClick={() => handleSelectOption(optIdx)}
-                style={{
-                  padding: '10px 14px',
-                  borderRadius: '8px',
-                  border: isSelected ? '2px solid #0284c7' : '1px solid #e2e8f0',
-                  backgroundColor: isSelected ? '#f0f9ff' : '#fff',
-                  textAlign: 'left',
-                  fontSize: '14px',
-                  color: isSelected ? '#0369a1' : '#334155',
-                  cursor: 'pointer'
-                }}
-              >
+              <button key={optIdx} onClick={() => handleSelectOption(optIdx)} style={optionButtonStyle}>
                 {opt}
               </button>
             );
@@ -426,22 +423,20 @@ export default function App() {
             textColor = '#0369a1';
           }
 
+          const gridBtnStyle: React.CSSProperties = {
+            position: 'relative',
+            height: '40px',
+            borderRadius: '6px',
+            border: '1px solid #cbd5e1',
+            backgroundColor: bgColor,
+            color: textColor,
+            fontWeight: isCurrent ? 'bold' : 'normal',
+            fontSize: '13px',
+            cursor: 'pointer'
+          };
+
           return (
-            <button
-              key={idx}
-              onClick={() => setCurrentIdx(idx)}
-              style={{
-                position: 'relative',
-                height: '40px',
-                borderRadius: '6px',
-                border: '1px solid #cbd5e1',
-                backgroundColor: bgColor,
-                color: textColor,
-                fontWeight: isCurrent ? 'bold' : 'normal',
-                fontSize: '13px',
-                cursor: 'pointer'
-              }}
-            >
+            <button key={idx} onClick={() => setCurrentIdx(idx)} style={gridBtnStyle}>
               {idx + 1}
               {isFlagged && <span style={gridFlagStyle}>🚩</span>}
             </button>
@@ -474,11 +469,11 @@ export default function App() {
             )}
 
             <div style={{ display: 'flex', gap: '8px', marginTop: '16px' }}>
-              <button style={secondaryButtonStyle} onClick={() => setShowSubmitModal(false)}>
+              <button style={modalCancelButtonStyle} onClick={() => setShowSubmitModal(false)}>
                 Keep Going
               </button>
               <button
-                style={primaryButtonStyle}
+                style={modalConfirmButtonStyle}
                 onClick={() => {
                   setShowSubmitModal(false);
                   setScreen('results');
@@ -597,6 +592,30 @@ const secondaryButtonStyle: React.CSSProperties = {
   fontWeight: 'bold',
   cursor: 'pointer',
   marginTop: '8px'
+};
+
+const modalCancelButtonStyle: React.CSSProperties = {
+  flex: 1,
+  padding: '12px',
+  backgroundColor: '#f1f5f9',
+  color: '#0284c7',
+  border: '1px solid #cbd5e1',
+  borderRadius: '12px',
+  fontSize: '14px',
+  fontWeight: 'bold',
+  cursor: 'pointer'
+};
+
+const modalConfirmButtonStyle: React.CSSProperties = {
+  flex: 1,
+  padding: '12px',
+  backgroundColor: '#0284c7',
+  color: '#ffffff',
+  border: 'none',
+  borderRadius: '12px',
+  fontSize: '14px',
+  fontWeight: 'bold',
+  cursor: 'pointer'
 };
 
 const gridScrollContainerStyle: React.CSSProperties = {
