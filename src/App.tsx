@@ -1056,7 +1056,7 @@ export default function App() {
 
   // --- 2. RESULTS SCREEN ---
   if (screen === 'results') {
-    const { totalCorrect, scorePct, quantCorrect, verbalCorrect } = calculateResults();
+    const { totalCorrect, quantCorrect, verbalCorrect } = calculateResults();
     const displayScore = savedScore !== null ? savedScore : totalCorrect;
     const displayPct = Math.round((displayScore / totalQs) * 100);
 
