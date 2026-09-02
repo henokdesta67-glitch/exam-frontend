@@ -1,4 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { createClient } from '@supabase/supabase-js';
+
+// --- Supabase Client Setup ---
+const SUPABASE_URL = 'https://uzfitbbzaygvbtymhhy.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_K1A4mbX26rz2Vlhhb2v3YA_gburu2rO';
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // --- Telegram WebApp Type Definitions ---
 declare global {
@@ -7,6 +13,7 @@ declare global {
       WebApp?: {
         initDataUnsafe?: {
           user?: {
+            id?: number;
             first_name?: string;
             last_name?: string;
             username?: string;
@@ -874,6 +881,7 @@ const secondaryButtonStyle: React.CSSProperties = {
 };
 
 export default function App() {
+  const [loading, setLoading] = useState(true);
   const [screen, setScreen] = useState<'intro' | 'exam' | 'results' | 'review'>('intro');
   const [currentIdx, setCurrentIdx] = useState(0);
   const [answers, setAnswers] = useState<Record<number, number>>({});
@@ -881,24 +889,64 @@ export default function App() {
   const [timeLeft, setTimeLeft] = useState(9000); // 2 hours 30 mins
   const [showSubmitModal, setShowSubmitModal] = useState(false);
   const [userName, setUserName] = useState('Candidate');
+  const [savedScore, setSavedScore] = useState<number | null>(null);
 
-  // Load Telegram User First Name
+  const telegramUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+
+  // Initialize Telegram User and check Supabase for prior attempt
   useEffect(() => {
     if (window.Telegram?.WebApp) {
       window.Telegram.WebApp.ready?.();
-      const tgUser = window.Telegram.WebApp.initDataUnsafe?.user;
-      if (tgUser?.first_name) {
-        setUserName(tgUser.first_name);
-      } else if (tgUser?.username) {
-        setUserName(`@${tgUser.username}`);
+      if (telegramUser?.first_name) {
+        setUserName(telegramUser.first_name);
+      } else if (telegramUser?.username) {
+        setUserName(`@${telegramUser.username}`);
       }
     }
-  }, []);
 
-  // Timer Lifecycle
+    async function checkExistingAttempt() {
+      if (!telegramUser?.id) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from('user_attempts')
+          .select('*')
+          .eq('user_id', telegramUser.id)
+          .maybeSingle();
+
+        if (error) {
+          console.error("Error querying Supabase:", error);
+        } else if (data) {
+          setAnswers(data.answers || {});
+          setSavedScore(data.score);
+          setScreen('results');
+        }
+      } catch (err) {
+        console.error("Unexpected error checking attempt:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    checkExistingAttempt();
+  }, [telegramUser]);
+
+  // Exam Countdown Timer
   useEffect(() => {
     if (screen !== 'exam') return;
-    const timer = setInterval(() => setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0)), 1000);
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          handleFinalSubmit();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
     return () => clearInterval(timer);
   }, [screen]);
 
@@ -934,6 +982,30 @@ export default function App() {
     return { totalCorrect, scorePct, quantCorrect, verbalCorrect };
   };
 
+  const handleFinalSubmit = async () => {
+    setShowSubmitModal(false);
+    const { totalCorrect } = calculateResults();
+    setSavedScore(totalCorrect);
+
+    if (telegramUser?.id) {
+      const { error } = await supabase
+        .from('user_attempts')
+        .insert([
+          {
+            user_id: telegramUser.id,
+            score: totalCorrect,
+            answers: answers
+          }
+        ]);
+
+      if (error && error.code !== '23505') {
+        console.error("Failed to persist score to Supabase:", error);
+      }
+    }
+
+    setScreen('results');
+  };
+
   const handleShareScore = () => {
     const { totalCorrect, scorePct } = calculateResults();
     const shareText = encodeURIComponent(
@@ -952,9 +1024,16 @@ export default function App() {
   const answeredCount = Object.keys(answers).length;
   const unansweredCount = totalQs - answeredCount;
 
-  // Count distribution
   const quantCount = mockQuestions.filter(q => q.section === 'Quantitative').length;
   const verbalCount = mockQuestions.filter(q => q.section === 'Verbal & Analytical').length;
+
+  if (loading) {
+    return (
+      <div style={{ textAlign: 'center', padding: '40px', fontFamily: 'sans-serif' }}>
+        <h3>Loading examination portal...</h3>
+      </div>
+    );
+  }
 
   // --- 1. INTRO SCREEN ---
   if (screen === 'intro') {
@@ -978,16 +1057,19 @@ export default function App() {
   // --- 2. RESULTS SCREEN ---
   if (screen === 'results') {
     const { totalCorrect, scorePct, quantCorrect, verbalCorrect } = calculateResults();
+    const displayScore = savedScore !== null ? savedScore : totalCorrect;
+    const displayPct = Math.round((displayScore / totalQs) * 100);
+
     return (
       <div style={containerStyle}>
         <div style={{ ...cardStyle, textAlign: 'center' }}>
           <h2>🎓 Exam Completed!</h2>
           <p style={{ color: '#64748b' }}>Candidate: {userName}</p>
           <div style={{ fontSize: '36px', fontWeight: 'bold', color: '#0088cc', margin: '10px 0' }}>
-            {scorePct}%
+            {displayPct}%
           </div>
-          <p style={{ color: '#22c55e', fontWeight: 'bold' }}>{totalCorrect} Correct</p>
-          <p style={{ color: '#ef4444' }}>{totalQs - totalCorrect} Wrong</p>
+          <p style={{ color: '#22c55e', fontWeight: 'bold' }}>{displayScore} Correct</p>
+          <p style={{ color: '#ef4444' }}>{totalQs - displayScore} Wrong</p>
 
           <hr style={{ border: 'none', borderTop: '1px solid #e2e8f0', margin: '15px 0' }} />
 
@@ -1002,9 +1084,6 @@ export default function App() {
           </button>
           <button style={secondaryButtonStyle} onClick={handleShareScore}>
             📤 Share Your Score
-          </button>
-          <button style={{ ...secondaryButtonStyle, border: 'none' }} onClick={() => setScreen('intro')}>
-            Back to Home
           </button>
         </div>
       </div>
@@ -1109,7 +1188,7 @@ export default function App() {
         ))}
       </div>
 
-      {/* Dynamic Grid Navigation strictly matching mockQuestions */}
+      {/* Question Navigation Grid */}
       <div style={cardStyle}>
         <div style={{ fontSize: '13px', fontWeight: 'bold', marginBottom: '10px' }}>Question Navigation</div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)', gap: '6px', maxHeight: '150px', overflowY: 'auto' }}>
@@ -1153,7 +1232,7 @@ export default function App() {
         Submit Examination
       </button>
 
-      {/* Submission Confirmation Modal */}
+      {/* Submission Modal */}
       {showSubmitModal && (
         <div style={{
           position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
@@ -1172,7 +1251,7 @@ export default function App() {
               <button style={secondaryButtonStyle} onClick={() => setShowSubmitModal(false)}>
                 Keep Going
               </button>
-              <button style={primaryButtonStyle} onClick={() => { setShowSubmitModal(false); setScreen('results'); }}>
+              <button style={primaryButtonStyle} onClick={handleFinalSubmit}>
                 Confirm Submit
               </button>
             </div>
