@@ -26,6 +26,59 @@ const mockQuestions = Array.from({ length: 80 }, (_, i) => ({
   correct: 0
 }));
 
+// --- Explicitly Typed Style Objects to fix TS2353 ---
+const containerStyle: React.CSSProperties = {
+  maxWidth: '600px',
+  margin: '0 auto',
+  padding: '20px',
+  fontFamily: 'system-ui, -apple-system, sans-serif',
+  color: '#333'
+};
+
+const headerBadgeStyle: React.CSSProperties = {
+  backgroundColor: '#f0f4f8',
+  borderRadius: '8px',
+  padding: '12px 16px',
+  marginBottom: '20px',
+  textAlign: 'center',
+  fontWeight: 'bold',
+  color: '#0088cc'
+};
+
+const cardStyle: React.CSSProperties = {
+  backgroundColor: '#ffffff',
+  borderRadius: '12px',
+  padding: '20px',
+  boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+  border: '1px solid #e1e8ed',
+  marginBottom: '20px'
+};
+
+const buttonStyle: React.CSSProperties = {
+  width: '100%',
+  padding: '14px',
+  backgroundColor: '#0088cc',
+  color: '#fff',
+  border: 'none',
+  borderRadius: '8px',
+  fontSize: '16px',
+  fontWeight: 'bold',
+  cursor: 'pointer',
+  marginTop: '10px'
+};
+
+const optionButtonStyle = (isSelected: boolean): React.CSSProperties => ({
+  width: '100%',
+  padding: '12px',
+  margin: '8px 0',
+  backgroundColor: isSelected ? '#e6f0fa' : '#f8f9fa',
+  border: isSelected ? '2px solid #0088cc' : '1px solid #dcdfe6',
+  borderRadius: '8px',
+  textAlign: 'left',
+  cursor: 'pointer',
+  fontSize: '15px'
+});
+
 export default function App() {
   const [screen, setScreen] = useState<'intro' | 'exam' | 'results' | 'review'>('intro');
   const [currentIdx, setCurrentIdx] = useState(0);
@@ -68,9 +121,6 @@ export default function App() {
     return `${hrs}h ${mins}m ${secs < 10 ? '0' : ''}${secs}s`;
   };
 
-  const answeredCount = Object.keys(answers).length;
-  const flaggedCount = Object.values(flagged).filter(Boolean).length;
-
   const calculateResults = () => {
     let verbalCorrect = 0;
     let quantCorrect = 0;
@@ -103,383 +153,112 @@ export default function App() {
     }
   };
 
+  // --- Intro Screen ---
   if (screen === 'intro') {
     return (
       <div style={containerStyle}>
-        <div style={headerBadgeStyle}>
-          <span style={{ fontWeight: 'bold', color: '#1e293b' }}>UAT Exam</span>
-          <span style={pillBadgeStyle}>AAU UAT 2026 Model</span>
-        </div>
-
+        <div style={headerBadgeStyle}>UAT Model Examination</div>
         <div style={cardStyle}>
-          <div style={{ fontSize: '40px' }}>👋</div>
-          <h2 style={{ margin: '8px 0 4px', color: '#0f172a' }}>Hello, {userName}!</h2>
-          <p style={{ color: '#64748b', margin: 0, fontSize: '14px' }}>
-            Welcome to the Final UAT Model exam simulation.
-          </p>
+          <h2>Welcome, {userName}!</h2>
+          <p><strong>Total Questions:</strong> 80 (35 Verbal, 45 Quantitative)</p>
+          <p><strong>Time Limit:</strong> 2 Hours 30 Minutes</p>
+          <button style={buttonStyle} onClick={() => setScreen('exam')}>
+            Start Examination
+          </button>
         </div>
-
-        <div style={cardStyle}>
-          <h3 style={sectionTitleStyle}>Exam Overview</h3>
-          <div style={grid2x2Style}>
-            <div style={statBoxStyle}>
-              <span style={{ fontSize: '20px' }}>📝</span>
-              <span style={statNumberStyle}>80</span>
-              <span style={statLabelStyle}>Questions</span>
-            </div>
-            <div style={statBoxStyle}>
-              <span style={{ fontSize: '20px' }}>⏱️</span>
-              <span style={statNumberStyle}>2h 30m</span>
-              <span style={statLabelStyle}>Duration</span>
-            </div>
-            <div style={statBoxStyle}>
-              <span style={{ fontSize: '20px' }}>📚</span>
-              <span style={statNumberStyle}>2</span>
-              <span style={statLabelStyle}>Sections</span>
-            </div>
-            <div style={statBoxStyle}>
-              <span style={{ fontSize: '20px' }}>🎯</span>
-              <span style={statNumberStyle}>50%</span>
-              <span style={statLabelStyle}>Pass Mark</span>
-            </div>
-          </div>
-
-          <div style={{ marginTop: '16px' }}>
-            <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#64748b' }}>SECTIONS</span>
-            <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
-              <span style={sectionTagStyle}>Verbal — 35 Qs</span>
-              <span style={sectionTagStyle}>Quantitative — 45 Qs</span>
-            </div>
-          </div>
-        </div>
-
-        <div style={cardStyle}>
-          <h3 style={sectionTitleStyle}>📋 Instructions</h3>
-          <ol style={{ paddingLeft: '20px', margin: 0, color: '#334155', fontSize: '14px', lineHeight: '1.6' }}>
-            <li>Each question carries 1 mark. No negative marking.</li>
-            <li>You can flag questions to review later during the exam.</li>
-            <li>Submit when finished to view your final score breakdown.</li>
-          </ol>
-        </div>
-
-        <button style={primaryButtonStyle} onClick={() => setScreen('exam')}>
-          🚀 Start Examination
-        </button>
       </div>
     );
   }
 
+  // --- Results Screen ---
   if (screen === 'results') {
     const { totalCorrect, scorePct, verbalCorrect, quantCorrect } = calculateResults();
     return (
       <div style={containerStyle}>
-        <div style={{ textAlign: 'center', margin: '20px 0' }}>
-          <div style={{ fontSize: '48px' }}>💪</div>
-          <h2 style={{ margin: '8px 0 4px', color: '#0f172a' }}>🎓 Exam Completed!</h2>
-          <span style={{ color: '#64748b', fontSize: '14px' }}>Candidate: {userName}</span>
-        </div>
-
+        <div style={headerBadgeStyle}>Examination Results</div>
         <div style={cardStyle}>
-          <div style={{ textAlign: 'center', padding: '10px' }}>
-            <div style={circleGaugeStyle}>
-              <span style={{ fontSize: '24px', fontWeight: 'bold', color: '#0284c7' }}>{totalCorrect}</span>
-              <span style={{ fontSize: '12px', color: '#94a3b8' }}>/80</span>
-            </div>
-            <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#0284c7', marginTop: '12px' }}>
-              {scorePct}%
-            </div>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', marginTop: '16px' }}>
-            <div style={{ ...statCardStyle, backgroundColor: '#f0fdf4' }}>
-              <span style={{ color: '#16a34a', fontSize: '18px', fontWeight: 'bold' }}>{totalCorrect}</span>
-              <span style={{ fontSize: '12px', color: '#166534' }}>Correct</span>
-            </div>
-            <div style={{ ...statCardStyle, backgroundColor: '#fef2f2' }}>
-              <span style={{ color: '#dc2626', fontSize: '18px', fontWeight: 'bold' }}>{80 - totalCorrect}</span>
-              <span style={{ fontSize: '12px', color: '#991b1b' }}>Wrong</span>
-            </div>
-            <div style={{ ...statCardStyle, backgroundColor: '#f0f9ff' }}>
-              <span style={{ color: '#0284c7', fontSize: '18px', fontWeight: 'bold' }}>{scorePct}%</span>
-              <span style={{ fontSize: '12px', color: '#075985' }}>Score %</span>
-            </div>
-          </div>
-        </div>
-
-        <div style={cardStyle}>
-          <h3 style={sectionTitleStyle}>Section Performance</h3>
-          
-          <div style={{ marginBottom: '16px' }}>
-            <div style={progressLabelRow}>
-              <span>📖 Verbal</span>
-              <span>{verbalCorrect}/35 ({Math.round((verbalCorrect / 35) * 100)}%)</span>
-            </div>
-            <div style={trackStyle}>
-              <div style={{ ...fillStyle, width: `${(verbalCorrect / 35) * 100}%` }} />
-            </div>
-          </div>
-
-          <div>
-            <div style={progressLabelRow}>
-              <span>🔢 Quantitative</span>
-              <span>{quantCorrect}/45 ({Math.round((quantCorrect / 45) * 100)}%)</span>
-            </div>
-            <div style={trackStyle}>
-              <div style={{ ...fillStyle, width: `${(quantCorrect / 45) * 100}%` }} />
-            </div>
-          </div>
-        </div>
-
-        <button style={primaryButtonStyle} onClick={() => { setCurrentIdx(0); setScreen('review'); }}>
-          🔍 Review Questions & Answers
-        </button>
-        <button style={secondaryButtonStyle} onClick={handleShareScore}>
-          📤 Share Your Score
-        </button>
-      </div>
-    );
-  }
-
-  if (screen === 'review') {
-    const q = mockQuestions[currentIdx];
-    const userAns = answers[currentIdx];
-    const isCorrect = userAns === q.correct;
-
-    const statusBadgeStyle: React.CSSProperties = {
-      padding: '4px 8px',
-      borderRadius: '6px',
-      fontSize: '12px',
-      fontWeight: 'bold',
-      backgroundColor: userAns === undefined ? '#f1f5f9' : isCorrect ? '#dcfce7' : '#fee2e2',
-      color: userAns === undefined ? '#475569' : isCorrect ? '#15803d' : '#b91c1c'
-    };
-
-    return (
-      <div style={containerStyle}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-          <button style={{ ...secondaryButtonStyle, width: 'auto', margin: 0, padding: '6px 12px' }} onClick={() => setScreen('results')}>
-            ⬅️ Back to Score
+          <h2>Final Score: {scorePct}%</h2>
+          <p><strong>Total Correct:</strong> {totalCorrect} / 80</p>
+          <p><strong>Verbal Section:</strong> {verbalCorrect} / 35</p>
+          <p><strong>Quantitative Section:</strong> {quantCorrect} / 45</p>
+          <button style={buttonStyle} onClick={handleShareScore}>
+            Share Score on Telegram
           </button>
-          <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#64748b' }}>
-            Question {currentIdx + 1} of 80
-          </span>
-        </div>
-
-        <div style={cardStyle}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-            <span style={{ fontWeight: 'bold', color: '#0f172a' }}>{q.section} Section</span>
-            <span style={statusBadgeStyle}>
-              {userAns === undefined ? 'Unanswered' : isCorrect ? 'Correct ✓' : 'Incorrect ✗'}
-            </span>
-          </div>
-
-          <p style={{ color: '#334155', fontSize: '15px', marginTop: '8px' }}>{q.question}</p>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px' }}>
-            {q.options.map((opt, optIdx) => {
-              const isSelected = userAns === optIdx;
-              const isRightOpt = q.correct === optIdx;
-
-              let border = '1px solid #e2e8f0';
-              let bg = '#fff';
-              let color = '#334155';
-
-              if (isRightOpt) {
-                border = '2px solid #22c55e';
-                bg = '#f0fdf4';
-                color = '#15803d';
-              } else if (isSelected && !isCorrect) {
-                border = '2px solid #ef4444';
-                bg = '#fef2f2';
-                color = '#b91c1c';
-              }
-
-              const optionRowStyle: React.CSSProperties = {
-                padding: '10px 14px',
-                borderRadius: '8px',
-                border,
-                backgroundColor: bg,
-                color,
-                fontSize: '14px',
-                display: 'flex',
-                justify: 'space-between',
-                alignItems: 'center'
-              };
-
-              return (
-                <div key={optIdx} style={optionRowStyle}>
-                  <span>{opt}</span>
-                  {isRightOpt && <span style={{ fontWeight: 'bold' }}>Correct Answer ✓</span>}
-                  {isSelected && !isRightOpt && <span style={{ fontWeight: 'bold' }}>Your Choice ✗</span>}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        <h3 style={{ ...sectionTitleStyle, margin: '16px 0 8px 4px' }}>Question Navigator</h3>
-        <div style={gridScrollContainerStyle}>
-          {mockQuestions.map((_, idx) => {
-            const uAns = answers[idx];
-            const correct = uAns === mockQuestions[idx].correct;
-            const isCurr = currentIdx === idx;
-
-            let bgColor = '#fff';
-            let textColor = '#334155';
-
-            if (isCurr) {
-              bgColor = '#0284c7';
-              textColor = '#fff';
-            } else if (uAns !== undefined) {
-              bgColor = correct ? '#dcfce7' : '#fee2e2';
-              textColor = correct ? '#15803d' : '#b91c1c';
-            }
-
-            const navBtnStyle: React.CSSProperties = {
-              height: '40px',
-              borderRadius: '6px',
-              border: '1px solid #cbd5e1',
-              backgroundColor: bgColor,
-              color: textColor,
-              fontWeight: isCurr ? 'bold' : 'normal',
-              fontSize: '13px',
-              cursor: 'pointer'
-            };
-
-            return (
-              <button key={idx} onClick={() => setCurrentIdx(idx)} style={navBtnStyle}>
-                {idx + 1}
-              </button>
-            );
-          })}
+          <button style={{ ...buttonStyle, backgroundColor: '#6c757d' }} onClick={() => setScreen('intro')}>
+            Back to Home
+          </button>
         </div>
       </div>
     );
   }
 
+  // --- Active Exam Screen ---
   const currentQ = mockQuestions[currentIdx];
 
   return (
     <div style={containerStyle}>
-      <div style={{ ...cardStyle, padding: '10px 16px', marginBottom: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#64748b' }}>Time Remaining</span>
-        <span style={{ fontSize: '14px', fontWeight: 'bold', color: timeLeft < 300 ? '#dc2626' : '#0284c7' }}>
-          ⏱️ {formatTime(timeLeft)}
-        </span>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+        <span>Question {currentIdx + 1} of 80</span>
+        <span>⏱️ {formatTime(timeLeft)}</span>
       </div>
 
-      <div style={{ ...cardStyle, marginBottom: '12px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontWeight: 'bold', color: '#0f172a' }}>
-            Q{currentIdx + 1}. {currentQ.section} Section
-          </span>
+      <div style={cardStyle}>
+        <div style={{ fontSize: '12px', color: '#0088cc', fontWeight: 'bold' }}>
+          {currentQ.section.toUpperCase()}
+        </div>
+        <h3 style={{ margin: '10px 0' }}>{currentQ.question}</h3>
+
+        {currentQ.options.map((opt, optIdx) => (
           <button
-            onClick={() => toggleFlag(currentIdx)}
-            style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: '18px' }}
+            key={optIdx}
+            style={optionButtonStyle(answers[currentIdx] === optIdx)}
+            onClick={() => handleSelectOption(optIdx)}
           >
-            {flagged[currentIdx] ? '🚩' : '🏳️'}
+            {opt}
           </button>
-        </div>
-        <p style={{ color: '#334155', fontSize: '15px', marginTop: '12px' }}>{currentQ.question}</p>
-        
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px' }}>
-          {currentQ.options.map((opt, optIdx) => {
-            const isSelected = answers[currentIdx] === optIdx;
-            const optionButtonStyle: React.CSSProperties = {
-              padding: '10px 14px',
-              borderRadius: '8px',
-              border: isSelected ? '2px solid #0284c7' : '1px solid #e2e8f0',
-              backgroundColor: isSelected ? '#f0f9ff' : '#fff',
-              textAlign: 'left',
-              fontSize: '14px',
-              color: isSelected ? '#0369a1' : '#334155',
-              cursor: 'pointer'
-            };
-
-            return (
-              <button key={optIdx} onClick={() => handleSelectOption(optIdx)} style={optionButtonStyle}>
-                {opt}
-              </button>
-            );
-          })}
-        </div>
+        ))}
       </div>
 
-      <h3 style={{ ...sectionTitleStyle, margin: '16px 0 8px 4px' }}>Question Navigation</h3>
-      <div style={gridScrollContainerStyle}>
-        {mockQuestions.map((_, idx) => {
-          const isAnswered = answers[idx] !== undefined;
-          const isCurrent = currentIdx === idx;
-          const isFlagged = flagged[idx];
-
-          let bgColor = '#fff';
-          let textColor = '#334155';
-
-          if (isCurrent) {
-            bgColor = '#0284c7';
-            textColor = '#fff';
-          } else if (isAnswered) {
-            bgColor = '#e0f2fe';
-            textColor = '#0369a1';
-          }
-
-          const gridBtnStyle: React.CSSProperties = {
-            position: 'relative',
-            height: '40px',
-            borderRadius: '6px',
-            border: '1px solid #cbd5e1',
-            backgroundColor: bgColor,
-            color: textColor,
-            fontWeight: isCurrent ? 'bold' : 'normal',
-            fontSize: '13px',
-            cursor: 'pointer'
-          };
-
-          return (
-            <button key={idx} onClick={() => setCurrentIdx(idx)} style={gridBtnStyle}>
-              {idx + 1}
-              {isFlagged && <span style={gridFlagStyle}>🚩</span>}
-            </button>
-          );
-        })}
-      </div>
-
-      <div style={{ marginTop: '12px' }}>
-        <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '8px', textAlign: 'center' }}>
-          {answeredCount}/80 answered · {flaggedCount} flagged
-        </div>
-        <button style={primaryButtonStyle} onClick={() => setShowSubmitModal(true)}>
-          Submit Exam
+      <div style={{ display: 'flex', gap: '10px' }}>
+        <button
+          style={{ ...buttonStyle, backgroundColor: '#6c757d' }}
+          disabled={currentIdx === 0}
+          onClick={() => setCurrentIdx((p) => p - 1)}
+        >
+          Previous
         </button>
+        <button
+          style={{ ...buttonStyle, backgroundColor: flagged[currentIdx] ? '#ffc107' : '#e2e8f0', color: '#000' }}
+          onClick={() => toggleFlag(currentIdx)}
+        >
+          {flagged[currentIdx] ? '🚩 Flagged' : 'Flag'}
+        </button>
+        {currentIdx < mockQuestions.length - 1 ? (
+          <button style={buttonStyle} onClick={() => setCurrentIdx((p) => p + 1)}>
+            Next
+          </button>
+        ) : (
+          <button style={{ ...buttonStyle, backgroundColor: '#28a745' }} onClick={() => setShowSubmitModal(true)}>
+            Submit
+          </button>
+        )}
       </div>
 
       {showSubmitModal && (
-        <div style={modalOverlayStyle}>
-          <div style={modalCardStyle}>
-            <div style={{ fontSize: '36px' }}>📤</div>
-            <h3 style={{ margin: '8px 0', color: '#0f172a' }}>Submit Exam?</h3>
-            <p style={{ color: '#475569', fontSize: '14px', margin: '0 0 12px' }}>
-              You've answered <b>{answeredCount}</b> of <b>80</b> questions.
-            </p>
-
-            {80 - answeredCount > 0 && (
-              <div style={warningAlertStyle}>
-                ⚠️ {80 - answeredCount} questions unanswered. You can't change answers after submitting.
-              </div>
-            )}
-
-            <div style={{ display: 'flex', gap: '8px', marginTop: '16px' }}>
-              <button style={modalCancelButtonStyle} onClick={() => setShowSubmitModal(false)}>
-                Keep Going
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex',
+          alignItems: 'center', justifyContent: 'center', padding: '20px'
+        }}>
+          <div style={cardStyle}>
+            <h3>Submit Examination?</h3>
+            <p>You have answered {Object.keys(answers).length} out of 80 questions.</p>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button style={buttonStyle} onClick={() => { setShowSubmitModal(false); setScreen('results'); }}>
+                Confirm
               </button>
-              <button
-                style={modalConfirmButtonStyle}
-                onClick={() => {
-                  setShowSubmitModal(false);
-                  setScreen('results');
-                }}
-              >
-                Confirm Submit
+              <button style={{ ...buttonStyle, backgroundColor: '#6c757d' }} onClick={() => setShowSubmitModal(false)}>
+                Cancel
               </button>
             </div>
           </div>
@@ -488,224 +267,3 @@ export default function App() {
     </div>
   );
 }
-
-const containerStyle: React.CSSProperties = {
-  maxWidth: '480px',
-  margin: '0 auto',
-  padding: '16px',
-  fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-  backgroundColor: '#f8fafc',
-  minHeight: '100vh',
-  boxSizing: 'border-box'
-};
-
-const cardStyle: React.CSSProperties = {
-  backgroundColor: '#ffffff',
-  borderRadius: '16px',
-  padding: '16px',
-  marginBottom: '12px',
-  boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
-};
-
-const headerBadgeStyle: React.CSSProperties = {
-  display: 'flex',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-  marginBottom: '12px'
-};
-
-const pillBadgeStyle: React.CSSProperties = {
-  backgroundColor: '#f0f9ff',
-  color: '#0284c7',
-  padding: '4px 10px',
-  borderRadius: '20px',
-  fontSize: '12px',
-  fontWeight: '600'
-};
-
-const sectionTitleStyle: React.CSSProperties = {
-  fontSize: '16px',
-  fontWeight: 'bold',
-  color: '#0f172a',
-  marginTop: 0,
-  marginBottom: '12px'
-};
-
-const grid2x2Style: React.CSSProperties = {
-  display: 'grid',
-  gridTemplateColumns: '1fr 1fr',
-  gap: '10px'
-};
-
-const statBoxStyle: React.CSSProperties = {
-  backgroundColor: '#f8fafc',
-  padding: '12px',
-  borderRadius: '12px',
-  textAlign: 'center',
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center'
-};
-
-const statNumberStyle: React.CSSProperties = {
-  fontSize: '18px',
-  fontWeight: 'bold',
-  color: '#0284c7',
-  marginTop: '4px'
-};
-
-const statLabelStyle: React.CSSProperties = {
-  fontSize: '12px',
-  color: '#64748b'
-};
-
-const sectionTagStyle: React.CSSProperties = {
-  backgroundColor: '#f1f5f9',
-  color: '#0284c7',
-  padding: '4px 10px',
-  borderRadius: '12px',
-  fontSize: '12px',
-  fontWeight: '500'
-};
-
-const primaryButtonStyle: React.CSSProperties = {
-  width: '100%',
-  padding: '14px',
-  backgroundColor: '#0284c7',
-  color: '#ffffff',
-  border: 'none',
-  borderRadius: '12px',
-  fontSize: '15px',
-  fontWeight: 'bold',
-  cursor: 'pointer',
-  marginTop: '8px'
-};
-
-const secondaryButtonStyle: React.CSSProperties = {
-  width: '100%',
-  padding: '14px',
-  backgroundColor: '#f1f5f9',
-  color: '#0284c7',
-  border: '1px solid #cbd5e1',
-  borderRadius: '12px',
-  fontSize: '15px',
-  fontWeight: 'bold',
-  cursor: 'pointer',
-  marginTop: '8px'
-};
-
-const modalCancelButtonStyle: React.CSSProperties = {
-  flex: 1,
-  padding: '12px',
-  backgroundColor: '#f1f5f9',
-  color: '#0284c7',
-  border: '1px solid #cbd5e1',
-  borderRadius: '12px',
-  fontSize: '14px',
-  fontWeight: 'bold',
-  cursor: 'pointer'
-};
-
-const modalConfirmButtonStyle: React.CSSProperties = {
-  flex: 1,
-  padding: '12px',
-  backgroundColor: '#0284c7',
-  color: '#ffffff',
-  border: 'none',
-  borderRadius: '12px',
-  fontSize: '14px',
-  fontWeight: 'bold',
-  cursor: 'pointer'
-};
-
-const gridScrollContainerStyle: React.CSSProperties = {
-  display: 'grid',
-  gridTemplateColumns: 'repeat(8, 1fr)',
-  gap: '6px',
-  maxHeight: '260px',
-  overflowY: 'auto',
-  padding: '8px',
-  backgroundColor: '#ffffff',
-  borderRadius: '12px',
-  border: '1px solid #e2e8f0'
-};
-
-const gridFlagStyle: React.CSSProperties = {
-  position: 'absolute',
-  top: '1px',
-  right: '1px',
-  fontSize: '8px'
-};
-
-const modalOverlayStyle: React.CSSProperties = {
-  position: 'fixed',
-  top: 0,
-  left: 0,
-  right: 0,
-  bottom: 0,
-  backgroundColor: 'rgba(0,0,0,0.5)',
-  display: 'flex',
-  justifyContent: 'center',
-  alignItems: 'center',
-  padding: '16px',
-  zIndex: 100
-};
-
-const modalCardStyle: React.CSSProperties = {
-  backgroundColor: '#ffffff',
-  borderRadius: '16px',
-  padding: '20px',
-  width: '100%',
-  maxWidth: '360px',
-  textAlign: 'center'
-};
-
-const warningAlertStyle: React.CSSProperties = {
-  backgroundColor: '#fefce8',
-  padding: '10px',
-  borderRadius: '8px',
-  color: '#854d0e',
-  fontSize: '12px'
-};
-
-const circleGaugeStyle: React.CSSProperties = {
-  width: '90px',
-  height: '90px',
-  borderRadius: '50%',
-  border: '6px solid #e0f2fe',
-  borderTopColor: '#0284c7',
-  display: 'flex',
-  justifyContent: 'center',
-  alignItems: 'center',
-  margin: '0 auto'
-};
-
-const statCardStyle: React.CSSProperties = {
-  padding: '10px',
-  borderRadius: '10px',
-  textAlign: 'center',
-  display: 'flex',
-  flexDirection: 'column'
-};
-
-const progressLabelRow: React.CSSProperties = {
-  display: 'flex',
-  justifyContent: 'space-between',
-  fontSize: '13px',
-  fontWeight: '500',
-  color: '#334155',
-  marginBottom: '4px'
-};
-
-const trackStyle: React.CSSProperties = {
-  height: '8px',
-  backgroundColor: '#f1f5f9',
-  borderRadius: '4px',
-  overflow: 'hidden'
-};
-
-const fillStyle: React.CSSProperties = {
-  height: '100%',
-  backgroundColor: '#0284c7',
-  borderRadius: '4px'
-};
